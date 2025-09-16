@@ -1,0 +1,131 @@
+---
+title: "Class1SurveyLab"
+author: "Nathalia G."
+date: "2025-09-16"
+output: html_document
+---
+
+1. Import class one survey data from our Github site (https://github.com/kijohnson/Advanced-Data-Analysis) (The dataset is called ‘Class 1 Survey Fall 2025 2.csv’), calling the R dataframe that you create C1survey.
+
+```{r}
+pacman::p_load(haven, readr, dplyr, openxlsx) 
+class_one_survey <-
+ read_csv(
+   "https://github.com/kijohnson/Advanced-Data-Analysis/raw/refs/heads/main/Class%201%20Survey%20Fall%202025%202.csv"
+   )
+head(class_one_survey, 10)
+```
+
+
+
+2. Determine: a. the number of observations (i.e. the number of people who filled out the survey) and b. the number of variables in the dataframe.
+
+```{r}
+dim(class_one_survey)
+#Output gives 58 observations and 27 variables
+```
+
+
+
+3. 
+
+a. Rename the column variables to something shorter and that is descriptive of what the variable is about (for example like_dogs for the ‘Do you like dogs?’ question variable) and 
+
+b. Display that they are renamed. 
+
+Hints: You can use either the rename_with function or the names function. The list of names for time is:
+“id”, “like_cats”, “like_dogs”, “have_desert”, “slogan”, “fav_day”, “larkORowl”, “fav_food”, “fav_drink”, “fav_season”, “fav_month”, “hobby”, “program”, “specialization”, “stat_software”, “R_exp”, “coding_comfort”, “coding_length”, “top_three”, “public_health_interest”, “fav_num”, “bday”, “bmonth”, “country”, “state”, “city”, “highest_educ_level”
+
+```{r}
+class1surv_cleanNames <- class_one_survey #creating a copy of the dataset
+  
+names(class1surv_cleanNames) <- c("id", "like_cats", "like_dogs", "have_desert", "slogan", "fav_day", "larkORowl", "fav_food", "fav_drink", "fav_season", "fav_month", "hobby", "program", "specialization", "stat_software", "R_exp", "coding_comfort", "coding_length", "top_three", "public_health_interest", "fav_num", "bday", "bmonth", "country", "state", "city",  "highest_educ_level")
+
+names(class1surv_cleanNames)
+```
+
+
+4. Write code to determine and display the number of factor, integer, numerical, and character variables there are in the C1survey dataset. Suggestion: Try to ask ChatGPT for a solution if you are unsure. There is a really short answer to this but we want to see what students come up with!
+
+```{r}
+#concatening with some words to describe each output for readability, adding a line at the end
+cat("Number of factor variables =", Num_factors <- sum(sapply(class1surv_cleanNames, is.factor)), "\n")
+
+cat("Number of interger variables =", Num_int <- sum(sapply(class1surv_cleanNames, is.integer)), "\n")
+
+cat("Number of numeric variables =", Num_num <- sum(sapply(class1surv_cleanNames, is.numeric)), "\n")
+
+cat("Number of character variables =", Num_int <- sum(sapply(class1surv_cleanNames, is.character)), "\n")
+
+#checking to make sure it worked
+sapply(class1surv_cleanNames, class)
+```
+
+5. a. Using code, check the bday and bmonth variables for any unusual or missing values (hint: use table function). If you find any, b. describe what you will do with the unusual values in a comment before or immediately following the code that does it, and c. after you have cleaned up any unusual values, find the median bday and month. *Note: please make sure that your bday and month variables are numeric before doing statistics
+
+```{r}
+### bday variable ###
+
+table(class1surv_cleanNames$bday, useNA = "always") 
+# I will change values that include information other than day to only list characters from 0-9
+# then, I will modify the character that had a year listed to only use the first character
+
+class1surv_cleanNames <- class1surv_cleanNames %>%
+  mutate(bday = gsub("[^0-9]", "", bday)) %>% 
+  mutate(bday = gsub("1997", "", bday))
+# I will not remove NAs in this case since we are only performing a median calculation
+# I will then convert the values to character
+
+class1surv_cleanNames <- class1surv_cleanNames %>% 
+  mutate(bday = as.numeric(bday))
+
+# Checking it worked
+class(class1surv_cleanNames$bday)
+
+#Calculating median day
+median(class1surv_cleanNames$bday, na.rm=TRUE)
+
+
+
+### bmonth variable###
+table(class1surv_cleanNames$bmonth, useNA = "always") 
+
+# I will change values with words to only list a number for the month
+class1surv_cleanNames <- class1surv_cleanNames %>%
+  mutate(bmonth = gsub("[^0-9]", "", bmonth))
+# I will not remove NAs in this case since we are only performing a median calculation
+# I will then convert the values to character
+class1surv_cleanNames <- class1surv_cleanNames %>% 
+  mutate(bmonth = as.numeric(bmonth))
+# Checking it worked
+class(class1surv_cleanNames$bmonth)
+#Calculating median day
+median(class1surv_cleanNames$bmonth, na.rm=TRUE)
+```
+
+6. a. Create a new variable called bseason that gives the season according to Northern Meteorological season in which respondents were born (winter = 12/1 to 2/29, spring = 3/1 to 5/31, summer = 6/1 to 8/31, fall = 9/1 to 11/30). b. Using the table function, print a table of Seasons in the columns and bmonths in the rows that allows you to check that the coding is correct c. Sum the columns using the addmargins function to answer the question of how many classmates were born in each season? Include your answer in the code.
+
+```{r}
+# a.Creating bseason
+class1surv_cleanNames <- class1surv_cleanNames %>%
+  mutate(bseason = case_when(
+    bmonth %in% c(1, 2, 12) ~ "Winter", 
+    bmonth %in% 3:5 ~ "Spring",
+    bmonth %in% 6:8 ~ "Summer",
+    bmonth %in% 9:11 ~ "Fall"
+  ))
+# b.Defining table
+seasons_table <- table(class1surv_cleanNames$bmonth, class1surv_cleanNames$bseason)
+# c. Adding Number of People in each season
+addmargins(seasons_table, FUN=sum)
+
+```
+
+7. Pick your favorite variable or variables to analyze, come up with a question you want to answer with that variable or variables, generate the code, and provide an answer to your question. Describe what you did using comments (i.e. #’s).
+
+```{r}
+# What is the class average level of R experience? 
+head(class1surv_cleanNames) # Visualizing variables in data set
+mean(class1surv_cleanNames$R_exp)# Taking the mean answer for R experience
+# The answer is the average class level is 2.5 (about average/ medium-level comfort)
+```
